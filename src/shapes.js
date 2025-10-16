@@ -103,63 +103,8 @@ function circle(cx, cy, extra = {}) {
 }
 
 
-function organicCircle(cx, cy, radius, extra = {}) {
-    const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    
-    // Ensure valid numbers
-    const validCx = Number(cx) || 0;
-    const validCy = Number(cy) || 0;
-    const validRadius = Math.max(Number(radius) || 0, 0.1); // Minimum radius to avoid NaN
-    
-    // Store original data for resizing
-    el.setAttribute('data-cx', validCx);
-    el.setAttribute('data-cy', validCy);
-    el.setAttribute('data-segments', '16');
-    el.setAttribute('data-wobble', '0.1');
-    
-    // Generate initial path
-    updateOrganicCirclePath(el, validCx, validCy, validRadius);
-    
-    const organicProps = {
-        fill: "none",
-        stroke: "#000000",
-        "stroke-width": "2",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "vector-effect": "non-scaling-stroke",
-        ...extra
-    };
-    
-    applyGlobalStyles(el, organicProps);
-    return el;
-}
 
-function updateOrganicCirclePath(element, cx, cy, radius) {
-    const segments = parseInt(element.getAttribute('data-segments')) || 16;
-    const wobble = parseFloat(element.getAttribute('data-wobble')) || 0.1;
-    
-    // Ensure valid inputs
-    const validCx = Number(cx) || 0;
-    const validCy = Number(cy) || 0;
-    const validRadius = Math.max(Number(radius) || 0, 0.1);
-    
-    const points = [];
-    for (let i = 0; i < segments; i++) {
-        const angle = (i / segments) * Math.PI * 2;
-        const pointRadius = validRadius * (1 + (Math.random() - 0.5) * wobble);
-        
-        // Ensure we get valid numbers
-        const x = validCx + Math.cos(angle) * pointRadius;
-        const y = validCy + Math.sin(angle) * pointRadius;
-        
-        // Format numbers to avoid scientific notation and ensure they're valid
-        points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
-    }
-    
-    points.push(points[0]);
-    const pathData = `M ${points.join(" L ")} Z`;
-    element.setAttribute("d", pathData);
-}
+
 
 
 function rect(x, y,  extra = {}) {
@@ -301,6 +246,26 @@ function text(x, y, extra = {}) {
   return g
 }
 
+function draggable(el , resize) {
+  
+  el.style.pointerEvents = "all";
+
+  el.onMouseLeftButtonDown(e => {
+    if(state.mode == Modes.ADD) return
+    el.drag = true
+    state.mouse("move")
+  }).onMouseMove( (event)=> {
+    if(!el.drag) return
+    resize(event)
+  })
+  .onMouseLeftButtonUp(e => {
+    el.drag = false
+    state.mode == Modes.SELECT && state.mouse("default")
+    state.mode == Modes.ADD && state.mouse("crosshair")
+  })
+
+
+}
 
 function ellipse(cx, cy,  extra = {}) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
@@ -309,6 +274,13 @@ function ellipse(cx, cy,  extra = {}) {
   el.setAttribute("rx", 0);
   el.setAttribute("ry", 0);
 
+  el.drag = false 
+  draggable(el , (e) => {
+      const cx = parseFloat(el.getAttribute("cx")) || 0;
+      const cy = parseFloat(el.getAttribute("cy")) || 0;
+      el.setAttribute("cx", cx + e.movementX);
+      el.setAttribute("cy", cy + e.movementY);
+  })
 
   return applyGlobalStyles(el, extra);
 }
@@ -447,4 +419,4 @@ SVGCircleElement.prototype.highlight = function() {
 };
 
 
-export { circle, rect, line, text, ellipse  , organicCircle  , polygon  , path};
+export { circle, rect, line, text, ellipse  , polygon  , path};
