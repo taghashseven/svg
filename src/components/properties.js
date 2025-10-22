@@ -2,8 +2,33 @@ import { state , stateProxy } from '../state.js';
 
 
 window.update = (attr , value) => {
+  if(state.currentElement.tagName == "g"){
+    state.currentElement.querySelector("text")
+      .setAttribute(attr , value)
+      state.properties.text[attr] = value
+      return 
+  }
   if(state.currentElement){
     state.currentElement.setAttribute(attr , value)
+  }
+}
+
+window.updateTransform = (attr , value) => {
+  if(state.currentElement){
+    switch (attr) {
+      case 'rotate':
+        state.currentElement.setAttribute('transform' , `rotate(${value})`)
+        break;
+      case 'scale':
+        state.currentElement.setAttribute('transform' , `scale(${value})`)
+        break;
+      case 'skewX':
+        state.currentElement.setAttribute('transform' , `skewX(${value})`)
+        break;
+      case 'skewY':
+        state.currentElement.setAttribute('transform' , `skewY(${value})`)
+        break;
+    }
   }
 }
 
@@ -11,9 +36,7 @@ window.update = (attr , value) => {
 const shapePropertiesTemplate = () => {
   const tag = state.currentElement?.tagName;
 
-  console.log(state.currentElement?.getAttribute('cx') , "current element ")
-
-   
+  console.log("tag 22 "  , tag)
 
   const templates = {
     circle: /*html*/ `
@@ -141,11 +164,79 @@ const shapePropertiesTemplate = () => {
       </div>
     `,
 
-    text : /*html*/ `
-      <div>
-        hdladk jlkdjldak 
+ 
+    // for text
+    g: /*html*/ `
+      <div class="space-y-3 shapes-properties">
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">X</label>
+          <input id="input-x" type="number"
+            value="${state?.currentElement?.getAttribute('transform')?.match(/(\d+)/g)[0] || 0}"
+            class="property-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            oninput="update('x', this.value)">
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Y</label>
+          <input id="input-y" type="number"
+            value="${state?.currentElement?.getAttribute('transform')?.match(/(\d+)/g)[1] || 0}"
+            class="property-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            oninput="update('y', this.value)">
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Font Size</label>
+          <input id="input-font-size" type="number"
+            value="${state?.currentElement?.querySelector('text')?.getAttribute('font-size') || 16}"
+            class="property-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            oninput="update('font-size', this.value)">
+        </div>
+
+
+        <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Font Family</label>
+        <select id="input-font-family"
+          class="property-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+          onchange="update('font-family', this.value)">
+          <option value="Arial">Arial</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Trebuchet MS">Trebuchet MS</option>
+          <option value="Comic Sans MS">Comic Sans MS</option>
+          <option value="Roboto">Roboto</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Open Sans">Open Sans</option>
+          
+        </select>
       </div>
-    ` ,
+
+              <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Text Alignment</label>
+          <select id="input-text-align"
+            class="property-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            onchange="update('text-anchor', this.value)">
+            <option value="start">Left</option>
+            <option value="middle">Center</option>
+            <option value="end">Right</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Text Content</label>
+          <textarea id="input-text-content"
+            class="property-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            rows="3"
+            value="${state?.currentElement?.querySelector('text')?.textContent || ''}"
+            oninput="|| "}>
+            ${state?.currentElement?.querySelector('text')?.textContent || ''}
+            </textarea>
+        </div>
+      </div>
+    `,
+
 
     path: /*html*/ `
       <div class="space-y-3 shapes-properties">
@@ -258,33 +349,82 @@ const transformPropertiesTemplate = () => {
 
         <div>
           <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rotation</label>
-          <input id="input-rotate" type="range" class="property-input w-full" min="0" max="360" value="${rotation}">
+          <div class="flex gap-2 items-center">
+            <input id="input-rotate" type="number" class="property-input w-16 border px-2" value="${rotation}"
+              oninput="updateTransform('rotate', this.value)">
+            <input id="range-rotate" type="range" class="property-input flex-1" min="0" max="360" value="${rotation}"
+              oninput="updateTransform('rotate', this.value)">
+          </div>
         </div>
 
         <div>
           <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Scale X</label>
-          <input id="input-scale-x" type="range" class="property-input w-full" min="0" max="200" value="${scaleX * 100}">
+          <input id="input-scale-x" type="range" class="property-input w-full" min="0" max="200" value="${scaleX * 100}"
+            oninput="updateTransform('scaleX', this.value / 100)">
         </div>
 
         <div>
           <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Scale Y</label>
-          <input id="input-scale-y" type="range" class="property-input w-full" min="0" max="200" value="${scaleY * 100}">
+          <input id="input-scale-y" type="range" class="property-input w-full" min="0" max="200" value="${scaleY * 100}"
+            oninput="updateTransform('scaleY', this.value / 100)">
         </div>
 
         <div>
           <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Skew X</label>
-          <input id="input-skew-x" type="range" class="property-input w-full" min="-45" max="45" value="${skewX}">
+          <input id="input-skew-x" type="range" class="property-input w-full" min="-45" max="45" value="${skewX}"
+            oninput="updateTransform('skewX', this.value)">
         </div>
 
         <div>
           <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Skew Y</label>
-          <input id="input-skew-y" type="range" class="property-input w-full" min="-45" max="45" value="${skewY}">
+          <input id="input-skew-y" type="range" class="property-input w-full" min="-45" max="45" value="${skewY}"
+            oninput="updateTransform('skewY', this.value)">
         </div>
       </div>
     </div>
   `;
 };
 
+
+// Helper to maintain and apply transforms
+function updateTransform(type, value) {
+  const el = state.currentElement;
+  if (!el) return;
+
+  // Get current transform
+  const transform = el.getAttribute("transform") || "";
+
+  // Extract existing transforms
+  const extract = (name, def = 0) => {
+    const match = transform.match(new RegExp(`${name}\\(([^)]+)\\)`));
+    return match ? match[1] : def;
+  };
+
+  let rotate = parseFloat(extract("rotate", 0));
+  let scaleX = parseFloat((extract("scale", "1,1") + "").split(",")[0]);
+  let scaleY = parseFloat((extract("scale", "1,1") + "").split(",")[1]);
+  if (isNaN(scaleY)) scaleY = scaleX;
+  let skewX = parseFloat(extract("skewX", 0));
+  let skewY = parseFloat(extract("skewY", 0));
+
+  // Update the relevant one
+  switch (type) {
+    case "rotate": rotate = parseFloat(value) || 0; break;
+    case "scaleX": scaleX = parseFloat(value) || 1; break;
+    case "scaleY": scaleY = parseFloat(value) || 1; break;
+    case "skewX": skewX = parseFloat(value) || 0; break;
+    case "skewY": skewY = parseFloat(value) || 0; break;
+  }
+
+  // Apply new transform
+  el.setAttribute(
+    "transform",
+    `rotate(${rotate}) scale(${scaleX},${scaleY}) skewX(${skewX}) skewY(${skewY})`
+  );
+
+  // Optional: notify your reactive UI system
+  if (state.emit) state.emit("transformChange", { rotate, scaleX, scaleY, skewX, skewY });
+}
 
 
 class Properties extends HTMLElement {

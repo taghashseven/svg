@@ -27,13 +27,19 @@ const SVGGlobal = {
     strokeWidth: 2,
     fill: "none",
   } , 
-  text : {
-    stroke: "#000",
-    strokeWidth: 2,
-    fill: "none",
-  }
-  
+
+
 };
+
+const properties = {
+    text : {
+        fill: "#f2f",
+        fontWeight : "normal" , 
+        fontFamily : "Arial" ,
+        fontSize : 12
+    }
+}
+
 
 const circlePropers = {
   stroke: "#000",
@@ -43,6 +49,15 @@ const circlePropers = {
 
 
 const state = {
+
+    text : {
+        stroke: "#f2f",
+        strokeWidth: 1,
+        fill: "none",
+        fontWeight : "normal" , 
+        fontFamily : "Arial" ,
+        fontSize : 24
+    } ,
     mode: Modes.SELECT, 
     x: 0,
     y: 0,
@@ -55,6 +70,8 @@ const state = {
 
     // internal event system
     _listeners: {},
+
+    properties : properties ,
 
     on(prop, callback) {
         console.log(prop )

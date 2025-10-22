@@ -29,8 +29,8 @@ class lay extends HTMLElement {
                 
                 ${hasShapes ? /*html*/ `
                     <div class="space-y-2 max-h-64 overflow-y-auto">
-                        ${state.shapes.map((shape, index) => /*html*/ `
-                            <div class="layer-item group flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" 
+                        ${[...state.svg.children].map((shape, index) => /*html*/ `
+                            <div class="layer-item group flex items-center justify-between py-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md" 
                                  data-index="${index}"
                                  >
                                 <div class="flex items-center space-x-3">

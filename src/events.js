@@ -74,6 +74,16 @@ function addMethods(proto) {
     });
     }
 
+    proto.onMouseEnter = function(handler) {
+        this.on('mouseenter', handler);
+        return this;
+    }
+
+    proto.onMouseLeave = function(handler) {
+        this.on('mouseleave', handler);
+        return this;
+    }
+
     
 }
 

@@ -1,5 +1,5 @@
 import {state , SVGGlobal , circlePropers , Modes } from "./state.js";
-import {generatePolygonPoints, getMousePositionWithCTM} from "./utils/helperfunction.js";
+import {generatePolygonPoints, getMousePositionWithCTM , getTranslate} from "./utils/helperfunction.js";
 
 
 function applyGlobalStyles(el, props ,  extra = {}) {
@@ -16,44 +16,52 @@ function applyGlobalStyles(el, props ,  extra = {}) {
   return el;
 }
 
-SVGGeometryElement.prototype.applyCommonBehavior = function(callback) {
 
-    const el = this;
-    el.dragg = false
 
-    el.style.pointerEvents = "all";
+function draggable(el , resize) {
 
-    el.onMouseLeftButtonDown(e => {
-        if( state.mode === Modes.ADD) return 
-        el.dragg = true 
-    });
+  el.drag = false 
+  
+  el.style.pointerEvents = "all";
 
-    el.onMouseLeftButtonUp(e => {
-        el.dragg = false 
-    });
+  el.onMouseLeftButtonDown(e => {
+    if(state.mode == Modes.ADD) return
+    el.drag = true
+    document.body.style.userSelect = "none";
+    state.currentElement = el
+  })
+  .onMouseEnter(e => {
+    if(state.mode == Modes.ADD) return
+    state.mode == Modes.SELECT && state.mouse("move")
+  })
+  .onMouseLeave(e => {
+    if(state.mode == Modes.ADD) return
+    state.mode == Modes.SELECT && state.mouse("default")
+  })
+  .onMouseMove( (event)=> {
+    if(!el.drag) return
+    state.mouse("move")
+    resize(event)
+  })
+  .onMouseLeftButtonUp(e => {
+    el.drag = false
+    // state.mode == Modes.SELECT && state.mouse("default")
+    // state.mode == Modes.ADD && state.mouse("crosshair")
+    document.body.style.userSelect = "";
+  })
 
-    el.addEventListener("mouseenter", () => {
-      if (state.mode === Modes.SELECT) {
-        state.mouse("move");
-      }
-    });
+  // this needs to be fixed , it solving a problem when i drag some times the up button is not fired 
+  window.addEventListener("mouseup", () => {
+  if (el.drag) {
+    el.drag = false;
+    document.body.style.userSelect = "";
+    if (state.mode === Modes.SELECT) state.mouse("default");
+    if (state.mode === Modes.ADD) state.mouse("crosshair");
+  }
+});
 
-    el.addEventListener("mouseleave", () => {
-      state._emit("mouseleave", el);
-      state.mode == Modes.SELECT && state.mouse("default")
-      state.mode == Modes.ADD && state.mouse("crosshair")
-    
-    });
 
-    el.onMouseMove(e => {
-      if(el.dragg) {
-        callback(e);
-      }
-    });
-
-    return el;
-
-};
+}
 
 function circle(cx, cy, extra = {}) {
 
@@ -65,45 +73,16 @@ function circle(cx, cy, extra = {}) {
 
   // Apply global and custom styles
   applyGlobalStyles(el, extra = {...circlePropers});
-  el.dragg = false 
-  el.addEventListener("mouseenter", () => {
-    state._emit("mouseenter", el);
-    if(state.mode === Modes.SELECT) {
-      state.mouse("move")
-    } 
+
+  draggable(el , (e) => {
+    const cx = parseFloat(el.getAttribute("cx")) || 0;
+    const cy = parseFloat(el.getAttribute("cy")) || 0;
+    el.setAttribute("cx", cx + e.movementX);
+    el.setAttribute("cy", cy + e.movementY);
   })
-  // fix for mouse enter to allow trigger 
-  el.style.pointerEvents = "all";
-
-  el.addEventListener("mouseleave", () => {
-    state._emit("mouseleave", el);
-    state.mode == Modes.SELECT && state.mouse("default")
-    state.mode == Modes.ADD && state.mouse("crosshair")
-  })
-
-  el.onMouseLeftButtonDown(e => {
-    if( state.mode === Modes.ADD) return 
-    el.dragg = true 
-  });
-
-  el.onMouseLeftButtonUp(e => {
-    if( state.mode === Modes.ADD) return 
-    el.dragg = false 
-  });
-
-  el.onMouseMove(e => {
-    if(el.dragg) {
-      const pos = getMousePositionWithCTM(state.svg, e);
-      el.setAttribute("cx", pos.x.toFixed(0));
-      el.setAttribute("cy", pos.y.toFixed(0));
-    }
-  });
 
   return el;
 }
-
-
-
 
 
 
@@ -113,6 +92,15 @@ function rect(x, y,  extra = {}) {
   el.setAttribute("y", y);
   el.setAttribute("width", 2);
   el.setAttribute("height", 2);
+
+  draggable(el , (e) => {
+    const x = parseFloat(el.getAttribute("x")) || 0;
+    const y = parseFloat(el.getAttribute("y")) || 0;
+    el.setAttribute("x", x + e.movementX);
+    el.setAttribute("y", y + e.movementY);
+  })
+
+  
   return applyGlobalStyles(el, extra);
 }
 
@@ -122,71 +110,81 @@ function line(x1, y1 , extra = {}) {
   el.setAttribute("y1", y1);
   el.setAttribute("x2", x1);
   el.setAttribute("y2", y1);
+
+  draggable(el , (e) => {
+    const x1 = parseFloat(el.getAttribute("x1")) || 0;
+    const y1 = parseFloat(el.getAttribute("y1")) || 0;
+    const x2 = parseFloat(el.getAttribute("x2")) || 0;
+    const y2 = parseFloat(el.getAttribute("y2")) || 0;
+
+    el.setAttribute("x1", x1 + e.movementX);
+    el.setAttribute("x2", x2 + e.movementX);
+    el.setAttribute("y1", y1 + e.movementY);
+    el.setAttribute("y2", y2 + e.movementY);
+  })
+
   return applyGlobalStyles(el, extra);
 }
 
+
+
 function text(x, y, extra = {}) {
-
-
-  function updateBox(){
-    let box = el.getBBox();
-    rect.setAttribute("x", box.x+2);
-    rect.setAttribute("y", box.y+2);
-    rect.setAttribute("width", box.width+2);
-    rect.setAttribute("height", box.height+2)
-  }
-
-  const el = document.createElementNS("http://www.w3.org/2000/svg", "text");
   const g  = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  const el = document.createElementNS("http://www.w3.org/2000/svg", "text");
   const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   rect.setAttribute("fill", "none");
   rect.setAttribute("stroke", "black");
-  rect.setAttribute("stroke-width", 1);
+  rect.setAttribute("rx", 5);
+
+  function renderBoundingBox(){
+    const bb = el.getBBox();
+    rect.setAttribute("x", bb.x);
+    rect.setAttribute("y", bb.y);
+    rect.setAttribute("width", bb.width);
+    rect.setAttribute("height", bb.height);
+  }
+
+  draggable(g    , (e) => {
+    const {x , y } = getTranslate(g);
+    g.setAttribute("transform", `translate(${x + e.movementX} ${y + e.movementY})`);
+  })
 
   g.appendChild(rect);
   g.appendChild(el);
   state.svg.appendChild(g);
   g.setAttribute("transform", `translate(${x} ${y})`);
 
-  el.setAttribute("x", 0);
-  el.setAttribute("y", 0);
+  el.setAttribute("x", 2);
+  el.setAttribute("y", 2);
+  el.setAttribute("xml:space", "preserve");
   el.setAttribute("dy", "0");
-  el.setAttribute("font-size", "24");
-
-  let tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
 
 
-  updateBox()
-
-
-  
-  
   let span = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-  span.setAttribute("x", 0);
+  span.setAttribute("x", 2);
   span.setAttribute("dy", "1.2em");
-  span.setAttribute("font-size", "24");
-  span.textContent = "Jonah mudzingwa";
 
   el.spans = [span];
   el.spanIndex = 0;
+  el.cursorIndex = 0
 
   el.appendChild(span);
-
-  document.addEventListener("keydown", e => {
+  state.svg.setAttribute("tabindex", "0");
+  state.svg.addEventListener("keydown", e => {
 
     // if its not current return 
     if(state.currentElement !== g) return
     
-    if(/^[a-zA-Z0-9]$/.test(e.key)){
-      console.log("key donw ", e.key)
+    if(/^[a-zA-Z0-9\t ]$/.test(e.key)){
+      // if its white space 
       el.spans[el.spanIndex].textContent += e.key
+      el.cursorIndex ++
     }
 
     if(e.key === "Enter"){
       let span = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-      span.setAttribute("x", 0);
+      span.setAttribute("x", 2);
       span.setAttribute("dy", "1.2em");
-      span.setAttribute("font-size", "24");
       el.spans.push(span);
       el.spanIndex = el.spans.length - 1;
       el.appendChild(span);
@@ -194,78 +192,33 @@ function text(x, y, extra = {}) {
   
     if(e.key === "Backspace"){
         //if span is empty remove it
-        if(el.spans[el.spanIndex].textContent.length === 0){
-          el.spans[el.spanIndex].remove();
+         console.log("now at this place" , el.cursorIndex , el.spans.length)
+        if(el.spans[el.spanIndex].textContent.length === 0 && el.spans.length > 1){
+          el.spans.pop();
           el.spanIndex = el.spans.length - 1;
         }else{
           el.spans[el.spanIndex].textContent = el.spans[el.spanIndex].textContent.slice(0, -1)
+          el.cursorIndex -- 
+         
         }
     }
-
-
-
-    updateBox()
-
+    renderBoundingBox()
+    
   });
 
-  g.addEventListener( "mouseenter", e => {
-     if(state.mode == Modes.ADD) return 
-     state.svg.style.cursor = "move";
-  })
+    let cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    el.showCursor = true
+    el.isfocused = true 
 
-  g.addEventListener( "mouseleave", e => {
-    if(state.mode == Modes.ADD){
-      state.svg.style.cursor = "default";
-    }
-    else {
-      state.svg.style.cursor = "pointer";
-    }
-    drag = false
-  })
 
-  g.addEventListener( "mousemove", e => {
-    if(state.mode == Modes.ADD) return 
-    if(g !== state.currentElement) return 
-    if(!drag) return
-    const ctm = g.getCTM();
-    g.setAttribute("transform", `translate(${state.x} ${state.y})`);
-  })
-
-  let drag = false
-
-  g.addEventListener( "mousedown", e => {
-    drag = true
-  })
-
-  g.addEventListener( "mouseup", e => {
-    drag = false
-  })
-
-  g.style.pointerEvents = "all";
+  for (let [key , value ] of Object.entries(state.properties.text)) {
+      el.setAttribute(key.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`) , value)
+  }
 
   return g
 }
 
-function draggable(el , resize) {
-  
-  el.style.pointerEvents = "all";
 
-  el.onMouseLeftButtonDown(e => {
-    if(state.mode == Modes.ADD) return
-    el.drag = true
-    state.mouse("move")
-  }).onMouseMove( (event)=> {
-    if(!el.drag) return
-    resize(event)
-  })
-  .onMouseLeftButtonUp(e => {
-    el.drag = false
-    state.mode == Modes.SELECT && state.mouse("default")
-    state.mode == Modes.ADD && state.mouse("crosshair")
-  })
-
-
-}
 
 function ellipse(cx, cy,  extra = {}) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
@@ -313,7 +266,7 @@ function polygon( centerX , centerY , radius , sides ,  extra = {}) {
   el.centerX = centerX
   el.centerY = centerY
 
-  el.applyCommonBehavior(e =>{
+  draggable(el , e =>{
     el.centerY += e.movementY;
     el.centerX += e.movementX;
     const points = generatePolygonPoints(el.centerX , el.centerY , el.radius , sides );

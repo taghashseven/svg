@@ -116,8 +116,8 @@ function main(){
         if(mode === Modes.ADD) {
             state.mouse("crosshair")
         }
-        if (mode === Modes.EDIT) {
-            state.mouse("text")
+        if (mode === Modes.SELECT) {
+            state.mouse("default")
         }
         
     })

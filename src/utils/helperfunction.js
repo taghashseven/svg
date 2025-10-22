@@ -57,4 +57,17 @@ function generatePolygonPoints(cx, cy, r, n, rotation = -Math.PI/2) {
     return points.map(p => p.join(',')).join(' ');
 }
 
-export { onShapeButtonClick, getMousePositionWithCTM , generatePolygonPoints };
+
+function getTranslate(el) {
+  const transform = el.getAttribute('transform') || '';
+  const match = transform.match(/translate\(([^)]+)\)/);
+  if (!match) return { x: 0, y: 0 };
+
+  const [xStr, yStr] = match[1].trim().split(/[\s,]+/);
+  return {
+    x: parseFloat(xStr) || 0,
+    y: parseFloat(yStr) || 0
+  };
+}
+
+export { onShapeButtonClick, getMousePositionWithCTM , generatePolygonPoints , getTranslate };

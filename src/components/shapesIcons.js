@@ -20,7 +20,7 @@ class ShapeIcons extends HTMLElement {
             <!-- Text Tool -->
             <span class="flex items-center px-3 py-2 mx-2 bg-gray-200 rounded-md cursor-pointer  active:scale-95 transition-all duration-150" data-name="Text">
                 <svg width="24" height="24" viewBox="0 0 24 24">
-                    <text x="12" y="12" font-size="12" text-anchor="middle" font-size="24">T</text>
+                    <text x="12" y="20" font-size="20" text-anchor="middle" >T</text>
                 </svg>
             </span>
 
